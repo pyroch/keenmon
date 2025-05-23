@@ -2,5 +2,7 @@ services:
   keenetic-exporter:
     image: docker.io/library/keenetic-prometheus-exporter
     ports:
-       8758:8758
+       - 8758:8758
+    volumes:
+      - ./config.json:/app/config.json
     restart: always
