@@ -2,7 +2,7 @@ services:
   keenetic-exporter:
     image: ghcr.io/pyroch/keenmon:latest
     ports:
-       - 8758:8758
+      - 8758:8758
     volumes:
       - ./config.json:/app/config.json # REQUIRED
     restart: always
