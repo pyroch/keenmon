@@ -1,11 +1,6 @@
 services:
   keenetic-exporter:
     image: docker.io/library/keenetic-prometheus-exporter
-    expose:
-       - 8758
+    ports:
+       8758:8758
     restart: always
-
-networks:
-  default:
-    name: net
-    external: true
