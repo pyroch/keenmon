@@ -1,4 +1,4 @@
-Prometheus exporter for keenetic routers
+Prometheus exporter for keenetic routers via rci
 1. Download docker-compose.yml and config.json
 wget https://raw.githubusercontent.com/pyroch/keenmon/refs/heads/main/docker-compose.yml && wget https://raw.githubusercontent.com/pyroch/keenmon/refs/heads/main/config.json
 2. Change config.json
