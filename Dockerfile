@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY keenetic_exporter.py .
 
 # Команда для запуска приложения
-CMD ["python", "keenetic_exporter.py"]
+CMD ["python", "-u", "keenetic_exporter.py"]
