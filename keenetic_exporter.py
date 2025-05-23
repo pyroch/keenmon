@@ -5,6 +5,7 @@ from wsgiref.simple_server import make_server
 from prometheus_client import Gauge, generate_latest, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY
 from prometheus_client.core import GaugeMetricFamily
 import time
+import signal
 
 # Настройки
 EXPORTER_PORT = 8758
@@ -126,6 +127,9 @@ def metrics_app(environ, start_response):
     start_response("404 Not Found", [("Content-type", "text/plain")])
     return [b"Not Found"]
 
+def handle_signal(signum, frame):
+    print("Received shutdown signal, exiting...", flush=True)
+    exit(0)
 
 if __name__ == "__main__":
     print(f"Starting server on http://localhost:{EXPORTER_PORT}/metrics", flush=True)
