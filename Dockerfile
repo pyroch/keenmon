@@ -12,7 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Копирование исходного кода приложения в контейнер
 COPY keenetic_exporter.py .
-COPY config.json .
 
 # Команда для запуска приложения
 CMD ["python", "keenetic_exporter.py"]
