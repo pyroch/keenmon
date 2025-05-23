@@ -1,6 +1,6 @@
 services:
   keenetic-exporter:
-    image: docker.io/library/keenetic-prometheus-exporter
+    image: ghcr.io/pyroch/keenmon:latest
     ports:
        - 8758:8758
     volumes:
