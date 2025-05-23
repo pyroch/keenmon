@@ -1,4 +1,16 @@
-1. Change config.json
-2. Build docker image: docker build -t keenetic-prometheus-exporter .
+Prometheus exporter for keenetic routers
+1. Download docker-compose.yml and config.json
+wget https://raw.githubusercontent.com/pyroch/keenmon/refs/heads/main/docker-compose.yml && wget https://raw.githubusercontent.com/pyroch/keenmon/refs/heads/main/config.json
+2. Change config.json
 3. Run: docker compose up -d
-4. go to http://localhost:8758
+4. Go to http://localhost:8758/metrics
+
+metrics:
+keenetic_memory_free_kb Free memory in KB
+keenetic_memory_total_kb Total memory in KB
+keenetic_memory_cache_kb Memory cache in KB
+keenetic_memory_buffers_kb Memory buffers in KB
+keenetic_cpu_load CPU Load
+keenetic_uptime_seconds System uptime in seconds
+keenetic_connections_free Free connections
+keenetic_connections_total Total connections
