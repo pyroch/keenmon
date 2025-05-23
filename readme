@@ -1,3 +1,4 @@
 1. Change config.json
 2. Build docker image: docker build -t keenetic-prometheus-exporter .
 3. Run: docker compose up -d
+4. go to http://localhost:8758
