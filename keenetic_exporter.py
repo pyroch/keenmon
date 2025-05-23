@@ -128,9 +128,17 @@ def metrics_app(environ, start_response):
 
 
 if __name__ == "__main__":
-    print(f"Starting server on http://localhost:{EXPORTER_PORT}/metrics")
+    print(f"Starting server on http://localhost:{EXPORTER_PORT}/metrics", flush=True)
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+
     start_background_updater()
+
     try:
-        make_server("", EXPORTER_PORT, metrics_app).serve_forever()
+        server = make_server("", EXPORTER_PORT, metrics_app)
+        print("Serving on port", EXPORTER_PORT, flush=True)
+        server.serve_forever()
     except KeyboardInterrupt:
-        print("Shutting down server.")
+        print("Shutting down server.", flush=True)
+    finally:
+        server.shutdown()
