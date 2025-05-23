@@ -96,7 +96,7 @@ def update_device_metrics(config):
                 "conn_free": float("nan"),
                 "conn_total": float("nan"),
             }
-        time.sleep(15)
+        time.sleep(5)
 
 
 def start_background_updater():
