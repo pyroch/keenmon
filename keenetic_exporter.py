@@ -54,7 +54,7 @@ device_metrics = {
 
 def fetch_data(url, username, password):
     """Запрашиваем данные с устройства"""
-    response = requests.get(url, auth=(username, password))
+    response = requests.get(url, auth=(username, password), timeout=5)
     if response.status_code == 200:
         return response.json()
     else:
@@ -85,7 +85,7 @@ def update_device_metrics(config):
             device_metrics[device_url].update(parsed)
         except Exception as e:
             print(f"Error updating {device_url}: {e}")
-            device_metrics[device_url] = {
+            device_metrics[device_url].update = {
                 "name": config["name"],
                 "mem_free": float("nan"),
                 "mem_total": float("nan"),

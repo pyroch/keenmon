@@ -1,5 +1,5 @@
 # Базовый образ на основе Python 3.13.3
-FROM python:3.13.3-slim
+FROM python:slim
 
 # Установка рабочей директории внутри контейнера
 WORKDIR /app
