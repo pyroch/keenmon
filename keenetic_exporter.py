@@ -85,8 +85,7 @@ def update_device_metrics(config):
             device_metrics[device_url].update(parsed)
         except Exception as e:
             print(f"Error updating {device_url}: {e}")
-            device_metrics[device_url].update = {
-                "name": config["name"],
+            device_metrics[device_url].update({
                 "mem_free": float("nan"),
                 "mem_total": float("nan"),
                 "mem_cache": float("nan"),
@@ -95,7 +94,7 @@ def update_device_metrics(config):
                 "uptime": float("nan"),
                 "conn_free": float("nan"),
                 "conn_total": float("nan"),
-            }
+            })
         time.sleep(5)
 
 
