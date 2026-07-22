@@ -6,6 +6,7 @@ from prometheus_client import Gauge, generate_latest, CONTENT_TYPE_LATEST, Colle
 from prometheus_client.core import GaugeMetricFamily
 import time
 import signal
+from urllib.parse import urlsplit, urlunsplit
 
 # Настройки
 EXPORTER_PORT = 8758
@@ -33,6 +34,8 @@ metrics = {
     "uptime": Gauge("keenetic_uptime_seconds", "System uptime in seconds", ["device_name", "device_ip"], registry=registry),
     "conn_free": Gauge("keenetic_connections_free", "Free connections", ["device_name", "device_ip"], registry=registry),
     "conn_total": Gauge("keenetic_connections_total", "Total connections", ["device_name", "device_ip"], registry=registry),
+    "port_link": Gauge("keenetic_port_link_up", "Whether the Ethernet port link is up", ["device_name", "device_ip", "interface", "port", "port_id", "label"], registry=registry),
+    "port_speed": Gauge("keenetic_port_speed_mbps", "Negotiated Ethernet port speed in Mbps", ["device_name", "device_ip", "interface", "port", "port_id", "label"], registry=registry),
 }
 
 # Хранилище данных
@@ -47,6 +50,7 @@ device_metrics = {
         "uptime": float("nan"),
         "conn_free": float("nan"),
         "conn_total": float("nan"),
+        "interface": {},
     }
     for config in DEVICE_CONFIGS
 }
@@ -75,6 +79,33 @@ def parse_data(data):
     }
 
 
+def interface_url(system_url):
+    """Build the interface RCI URL from the configured system RCI URL."""
+    parsed = urlsplit(system_url)
+    return urlunsplit((parsed.scheme, parsed.netloc, "/rci/show/interface/GigabitEthernet0", "", ""))
+
+
+def parse_interface_data(data):
+    """Keep interface and physical-port fields used by Prometheus metrics."""
+    return {
+        "name": str(data.get("interface-name") or data.get("id") or "GigabitEthernet0"),
+        "ports": data.get("port") or {},
+    }
+
+
+def bool_value(value, true_values):
+    """Convert Keenetic string flags to Prometheus-compatible 0/1 values."""
+    return 1 if str(value).lower() in true_values else 0
+
+
+def number(value):
+    """Convert an optional RCI number to float, using NaN when unavailable."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float("nan")
+
+
 def update_device_metrics(config):
     """Фоновое обновление метрик для одного устройства"""
     device_url = config["ip"]
@@ -84,7 +115,7 @@ def update_device_metrics(config):
             parsed = parse_data(data)
             device_metrics[device_url].update(parsed)
         except Exception as e:
-            print(f"Error updating {device_url}: {e}")
+            print(f"Error updating system metrics for {device_url}: {e}")
             device_metrics[device_url].update({
                 "mem_free": float("nan"),
                 "mem_total": float("nan"),
@@ -95,6 +126,12 @@ def update_device_metrics(config):
                 "conn_free": float("nan"),
                 "conn_total": float("nan"),
             })
+        try:
+            interface_data = fetch_data(interface_url(device_url), config["username"], config["password"])
+            device_metrics[device_url]["interface"] = parse_interface_data(interface_data)
+        except Exception as e:
+            print(f"Error updating interface metrics for {device_url}: {e}")
+            device_metrics[device_url]["interface"] = {}
         time.sleep(5)
 
 
@@ -118,6 +155,21 @@ def metrics_app(environ, start_response):
             metrics["uptime"].labels(device_name=name, device_ip=ip).set(data["uptime"])
             metrics["conn_free"].labels(device_name=name, device_ip=ip).set(data["conn_free"])
             metrics["conn_total"].labels(device_name=name, device_ip=ip).set(data["conn_total"])
+
+            interface = data.get("interface") or {}
+            if interface:
+                interface_name = interface["name"]
+                for port, port_data in interface["ports"].items():
+                    port_labels = dict(
+                        device_name=name,
+                        device_ip=ip,
+                        interface=interface_name,
+                        port=str(port),
+                        port_id=str(port_data.get("id", "")),
+                        label=str(port_data.get("label", port)),
+                    )
+                    metrics["port_link"].labels(**port_labels).set(bool_value(port_data.get("link"), {"up"}))
+                    metrics["port_speed"].labels(**port_labels).set(number(port_data.get("speed")))
 
         output = generate_latest(registry)
         start_response("200 OK", [("Content-type", CONTENT_TYPE_LATEST)])

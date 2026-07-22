@@ -14,3 +14,5 @@ keenetic_cpu_load CPU Load
 keenetic_uptime_seconds System uptime in seconds
 keenetic_connections_free Free connections
 keenetic_connections_total Total connections
+keenetic_port_link_up Physical port link state (1 = up)
+keenetic_port_speed_mbps Negotiated physical port speed in Mbps
