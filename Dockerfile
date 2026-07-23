@@ -1,17 +1,14 @@
-# Базовый образ на основе Python 3.13.3
-FROM python:slim
+FROM golang:1.23-alpine AS build
+WORKDIR /src
+COPY go.mod main.go ./
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /keenmon .
 
-# Установка рабочей директории внутри контейнера
+FROM alpine:3.22
+RUN apk add --no-cache ca-certificates \
+    && addgroup -S keenmon \
+    && adduser -S -G keenmon keenmon
 WORKDIR /app
-
-# Копирование файла зависимостей в контейнер
-COPY requirements.txt .
-
-# Установка зависимостей
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Копирование исходного кода приложения в контейнер
-COPY keenetic_exporter.py .
-
-# Команда для запуска приложения
-CMD ["python", "-u", "keenetic_exporter.py"]
+COPY --from=build /keenmon /usr/local/bin/keenmon
+USER keenmon
+EXPOSE 8758
+ENTRYPOINT ["keenmon"]
