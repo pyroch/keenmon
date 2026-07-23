@@ -86,3 +86,31 @@ func TestParsePorts(t *testing.T) {
 		t.Fatal("missing number must be NaN")
 	}
 }
+
+func TestSystemResponseAcceptsNumbersAndNumericStrings(t *testing.T) {
+	var response systemResponse
+	err := json.Unmarshal([]byte(`{
+		"memfree": 10,
+		"memtotal": "20",
+		"memcache": null,
+		"membuffers": "4.5",
+		"cpuload": "5",
+		"uptime": "123456",
+		"connfree": 7,
+		"conntotal": "8"
+	}`), &response)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fillMissingWithNaN(&response)
+
+	if float64(*response.Uptime) != 123456 {
+		t.Fatalf("uptime = %v, want 123456", *response.Uptime)
+	}
+	if float64(*response.MemoryTotal) != 20 {
+		t.Fatalf("memory total = %v, want 20", *response.MemoryTotal)
+	}
+	if !math.IsNaN(float64(*response.MemoryCache)) {
+		t.Fatalf("memory cache = %v, want NaN", *response.MemoryCache)
+	}
+}

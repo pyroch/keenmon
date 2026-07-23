@@ -33,14 +33,36 @@ type config struct {
 }
 
 type systemResponse struct {
-	MemoryFree    *float64 `json:"memfree"`
-	MemoryTotal   *float64 `json:"memtotal"`
-	MemoryCache   *float64 `json:"memcache"`
-	MemoryBuffers *float64 `json:"membuffers"`
-	CPULoad       *float64 `json:"cpuload"`
-	Uptime        *float64 `json:"uptime"`
-	ConnFree      *float64 `json:"connfree"`
-	ConnTotal     *float64 `json:"conntotal"`
+	MemoryFree    *metricNumber `json:"memfree"`
+	MemoryTotal   *metricNumber `json:"memtotal"`
+	MemoryCache   *metricNumber `json:"memcache"`
+	MemoryBuffers *metricNumber `json:"membuffers"`
+	CPULoad       *metricNumber `json:"cpuload"`
+	Uptime        *metricNumber `json:"uptime"`
+	ConnFree      *metricNumber `json:"connfree"`
+	ConnTotal     *metricNumber `json:"conntotal"`
+}
+
+type metricNumber float64
+
+func (number *metricNumber) UnmarshalJSON(data []byte) error {
+	value := strings.TrimSpace(string(data))
+	if value == "null" {
+		return nil
+	}
+	if len(value) >= 2 && value[0] == '"' && value[len(value)-1] == '"' {
+		unquoted, err := strconv.Unquote(value)
+		if err != nil {
+			return fmt.Errorf("invalid quoted number: %w", err)
+		}
+		value = unquoted
+	}
+	parsed, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return fmt.Errorf("invalid number %q", value)
+	}
+	*number = metricNumber(parsed)
+	return nil
 }
 
 type interfaceResponse struct {
@@ -148,7 +170,7 @@ func newExporter(configs []config) *exporter {
 }
 
 func emptySystem() systemResponse {
-	nan := math.NaN()
+	nan := metricNumber(math.NaN())
 	return systemResponse{
 		MemoryFree: &nan, MemoryTotal: &nan, MemoryCache: &nan, MemoryBuffers: &nan,
 		CPULoad: &nan, Uptime: &nan, ConnFree: &nan, ConnTotal: &nan,
@@ -235,13 +257,13 @@ func interfaceURL(systemURL string) string {
 }
 
 func fillMissingWithNaN(data *systemResponse) {
-	fields := []**float64{
+	fields := []**metricNumber{
 		&data.MemoryFree, &data.MemoryTotal, &data.MemoryCache, &data.MemoryBuffers,
 		&data.CPULoad, &data.Uptime, &data.ConnFree, &data.ConnTotal,
 	}
 	for _, field := range fields {
 		if *field == nil {
-			nan := math.NaN()
+			nan := metricNumber(math.NaN())
 			*field = &nan
 		}
 	}
@@ -314,14 +336,14 @@ func (e *exporter) metrics(w http.ResponseWriter, _ *http.Request) {
 		deviceLabels := labels(map[string]string{
 			"device_name": data.Config.Name, "device_ip": data.Config.IP,
 		})
-		writeSample(w, "keenetic_memory_free_kb", deviceLabels, *data.System.MemoryFree)
-		writeSample(w, "keenetic_memory_total_kb", deviceLabels, *data.System.MemoryTotal)
-		writeSample(w, "keenetic_memory_cache_kb", deviceLabels, *data.System.MemoryCache)
-		writeSample(w, "keenetic_memory_buffers_kb", deviceLabels, *data.System.MemoryBuffers)
-		writeSample(w, "keenetic_cpu_load", deviceLabels, *data.System.CPULoad)
-		writeSample(w, "keenetic_uptime_seconds", deviceLabels, *data.System.Uptime)
-		writeSample(w, "keenetic_connections_free", deviceLabels, *data.System.ConnFree)
-		writeSample(w, "keenetic_connections_total", deviceLabels, *data.System.ConnTotal)
+		writeSample(w, "keenetic_memory_free_kb", deviceLabels, float64(*data.System.MemoryFree))
+		writeSample(w, "keenetic_memory_total_kb", deviceLabels, float64(*data.System.MemoryTotal))
+		writeSample(w, "keenetic_memory_cache_kb", deviceLabels, float64(*data.System.MemoryCache))
+		writeSample(w, "keenetic_memory_buffers_kb", deviceLabels, float64(*data.System.MemoryBuffers))
+		writeSample(w, "keenetic_cpu_load", deviceLabels, float64(*data.System.CPULoad))
+		writeSample(w, "keenetic_uptime_seconds", deviceLabels, float64(*data.System.Uptime))
+		writeSample(w, "keenetic_connections_free", deviceLabels, float64(*data.System.ConnFree))
+		writeSample(w, "keenetic_connections_total", deviceLabels, float64(*data.System.ConnTotal))
 
 		portNumbers := make([]string, 0, len(data.Ports))
 		for number := range data.Ports {
